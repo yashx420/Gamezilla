@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useKey } from "../components/useKey";
@@ -70,6 +71,44 @@ export function Search({ query, setQuery, onSubmit }) {
     </form>
   );
 }
+export function UserMenu() {
+  const { data: session } = useSession();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  if (!session) {
+    return (
+      <div className="user-menu">
+        <Link href="/login"><button className="btn-login">Login</button></Link>
+        <Link href="/signup"><button className="btn-signup">Sign-up</button></Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="user-menu" ref={dropdownRef}>
+      <button onClick={() => setOpen(!open)}>{session.user.username || session.user.email}</button>
+      {open && (
+        <ul className="dropdown-menu">
+          <li onClick={() => router.push("/profile")}>Profile</li>
+          <li onClick={() => router.push("/settings")}>Settings</li>
+          <li onClick={() => signOut()}>Logout</li>
+        </ul>
+      )}
+    </div>
+  );
+}
 
 function Logo() {
   const router = useRouter();
@@ -83,37 +122,4 @@ function Logo() {
   );
 }
 
-function UserMenu() {
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const dropdownRef = useRef(null);
 
-  // Close dropdown if clicked outside
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  return (
-    <div className="user-menu" ref={dropdownRef}>
-      <Link href="/login"><button className="btn-login">Login</button></Link>
-      <Link href="/signup"><button className="btn-signup">Sign-up</button></Link>
-      <div className="dropdown">
-        <button className="btn-dropdown" onClick={() => setOpen(!open)}>
-          ☰
-        </button>
-        {open && (
-          <ul className="dropdown-menu">
-            <li onClick={() => router.push("/profile")}>Profile</li>
-            <li onClick={() => router.push("/settings")}>Settings</li>
-          </ul>
-        )}
-      </div>
-    </div>
-  );
-}
