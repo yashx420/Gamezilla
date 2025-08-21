@@ -1,65 +1,61 @@
-import { useEffect, useRef, useState } from "react";
-import StarRating from "./StarRating";
-import { useGames } from "./useGames";
-import { useLocalStorageState } from "./useLocalStorageState";
-import { useKey } from "./useKey";
+"use client";
+
+import { useState, useEffect } from "react";
+import Layout from "@/components/Layout";
+import { useSearchParams } from "next/navigation";
+import StarRating from "@/components/StarRating";
+import { useGames } from "@/components/useGames";
+import { useLocalStorageState } from "@/components/useLocalStorageState";
+import { useKey } from "@/components/useKey";
 
 const average = (arr) => arr.reduce((acc, cur) => acc + cur, 0) / arr.length;
 const KEY = process.env.NEXT_PUBLIC_RAWG_API_KEY;
 
-export default function App() {
+export default function ResultsPage() {
+  const searchParams = useSearchParams();
+  const search = searchParams.get("search") || "";
+
   const [played, setPlayed] = useLocalStorageState([], "played");
   const [watchList, setWatchList] = useLocalStorageState([], "watchList");
-  const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState(null);
   const [sortOption, setSortOption] = useState("year-desc");
 
-  useEffect(() => {
-    document.title = "GameZilla 🎮";
-  }, []);
-
-  const [games, isLoading, error] = useGames(query);
+  const [games, isLoading, error] = useGames(search);
 
   function onCloseGame() {
     setSelectedId(null);
   }
 
   function handleSelectGame(id) {
-    setSelectedId((selectedId) => (id === selectedId ? null : id));
+    setSelectedId((prev) => (id === prev ? null : id));
   }
 
   function handleAddPlayed(game) {
-    setPlayed((played) => {
-      if (played.some((g) => g.id === game.id)) {
-        return played;
-      }
-      return [...played, game];
-    });
+    setPlayed((prev) => (prev.some((g) => g.id === game.id) ? prev : [...prev, game]));
   }
 
   function handleAddWatchList(game) {
-    setWatchList((watchList) => {
-      if (watchList.some((g) => g.id === game.id)) {
-        return watchList;
-      }
-      return [...watchList, game];
-    });
+    setWatchList((prev) =>
+      prev.some((g) => g.id === game.id) ? prev : [...prev, game]
+    );
   }
 
   function handleDeletePlayed(id) {
-    setPlayed((played) => played.filter((game) => game.id !== id));
+    setPlayed((prev) => prev.filter((g) => g.id !== id));
   }
 
   function handleDeleteWatchList(id) {
-    setWatchList((watchList) => watchList.filter((game) => game.id !== id));
+    setWatchList((prev) => prev.filter((g) => g.id !== id));
   }
 
+  useEffect(() => {
+    document.title = "GameZilla 🎮";
+  }, []);
+
   return (
-    <>
-      <NavBar>
-        <Search query={query} setQuery={setQuery} />
-        <NumResults games={games} />
-      </NavBar>
+    <Layout>
+      <NumResults games={games} />
+
       <Main>
         <Box>
           <WatchList
@@ -67,6 +63,7 @@ export default function App() {
             handleDeleteWatchList={handleDeleteWatchList}
           />
         </Box>
+
         <Box>
           {isLoading && <Loader />}
           {!isLoading && !error && (
@@ -102,7 +99,7 @@ export default function App() {
           )}
         </Box>
       </Main>
-    </>
+    </Layout>
   );
 }
 
@@ -129,67 +126,11 @@ function ErrorMsg({ message }) {
   return <p className="error">{message}</p>;
 }
 
-function NavBar({ children }) {
-  return (
-    <nav className="nav-bar">
-      <Logo />
-      {children}
-    </nav>
-  );
-}
-
 function NumResults({ games }) {
   return (
     <p className="num-results">
       Found <strong>{games.length}</strong> results
     </p>
-  );
-}
-
-function Logo() {
-  function handleLogoClick() {
-    window.location.reload();
-  }
-  return (
-    <div className="logo" onClick={handleLogoClick}>
-      <span role="img" aria-label="gamepad">
-        🎮
-      </span>
-      <h1>GameZilla</h1>
-    </div>
-  );
-}
-
-function Search({ query, setQuery }) {
-  const inputEl = useRef(null);
-
-  useKey("Enter", function () {
-    if (document.activeElement === inputEl.current) return;
-    inputEl.current.focus();
-    setQuery("");
-  });
-
-  function clearSearch() {
-    setQuery("");
-    inputEl.current.focus();
-  }
-
-  return (
-    <div className="search-container">
-      <input
-        className="search"
-        type="text"
-        placeholder="Search games..."
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        ref={inputEl}
-      />
-      {query && (
-        <button className="search-clear" onClick={clearSearch}>
-          ×
-        </button>
-      )}
-    </div>
   );
 }
 
@@ -279,156 +220,7 @@ function GameList({ games, handleSelectGame, sortOption, setSortOption }) {
   );
 }
 
-/* ---------- GameDetails + helpers ---------- */
-
-export function GameDetails({
-  selectedId,
-  onCloseGame,
-  onAddPlayed,
-  played,
-  onAddWatchlist,
-  handleDeleteWatchList,
-}) {
-  const [game, setGame] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [userRating, setUserRating] = useState("");
-  const isPlayed = played.some((g) => g.id === selectedId);
-
-  const {
-    name,
-    released,
-    background_image,
-    rating,
-    description_raw: plot,
-    genres = [],
-    developers = [],
-  } = game;
-
-  function handleAdd() {
-    if (!isPlayed) {
-      const newPlayedGame = {
-        id: selectedId,
-        background_image,
-        name,
-        released,
-        rating: Number(rating),
-        userRating,
-      };
-      onAddPlayed(newPlayedGame);
-      handleDeleteWatchList(newPlayedGame.id);
-    }
-    onCloseGame();
-  }
-
-  function handleWatchList() {
-    if (!isPlayed) {
-      const newWantToWatchGame = {
-        id: selectedId,
-        background_image,
-        name,
-        released,
-        rating: Number(rating),
-        userRating,
-      };
-      onAddWatchlist(newWantToWatchGame);
-    }
-  }
-
-  useKey("Escape", onCloseGame);
-
-  useEffect(() => {
-    if (!selectedId) return;
-    const controller = new AbortController();
-
-    async function getGameDetails() {
-      setIsLoading(true);
-      try {
-        const safeId = encodeURIComponent(selectedId.toString().trim());
-        const res = await fetch(
-          `https://api.rawg.io/api/games/${safeId}?key=${KEY}`,
-          { signal: controller.signal }
-        );
-        if (!res.ok) throw new Error("Failed to fetch game details");
-        const data = await res.json();
-        setGame(data);
-      } catch (err) {
-        if (err.name !== "AbortError") console.error(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    getGameDetails();
-    return () => controller.abort();
-  }, [selectedId]);
-
-  useEffect(() => {
-    if (!name) return;
-    document.title = `${name} | GameZilla`;
-    return () => {
-      document.title = "GameZilla";
-    };
-  }, [name]);
-
-  return (
-    <div className="details">
-      {isLoading ? (
-        <Loader />
-      ) : (
-        <>
-          <header>
-            <button className="btn-back" onClick={onCloseGame}>
-              X
-            </button>
-            {background_image && (
-              <img
-                src={background_image}
-                alt={`${name} background`}
-                onError={(e) => (e.target.style.display = "none")}
-              />
-            )}
-            <div className="details-overview-container">
-              <div className="details-info">
-                <h2>{name}</h2>
-                <p>{released || "Unknown release"} &bull;</p>
-                <p>{genres.map((g) => g.name).join(", ") || "Unknown genre"}</p>
-                <p>
-                  Developed by {developers.map((d) => d.name).join(", ") || "Unknown"}
-                </p>
-              </div>
-              <div className="rating-box">
-                <h2>⭐ {rating || "N/A"} / 5</h2>
-              </div>
-            </div>
-          </header>
-          <section>
-            <div className="rating">
-              {!isPlayed && <p>Your Rating: </p>}
-              {isPlayed ? (
-                <p>You have played this game</p>
-              ) : (
-                <StarRating onSetRating={setUserRating} rating={userRating} />
-              )}
-              <button
-                className="btn-add"
-                onClick={!isPlayed ? handleAdd : () => {}}
-              >
-                {isPlayed ? "Want to Play" : "Add to Played ✔️"}
-              </button>
-              {!isPlayed && (
-                <button className="btn-add" onClick={handleWatchList}>
-                  Want to Play 👁️‍🗨️
-                </button>
-              )}
-            </div>
-            <p>
-              <em>{plot || "No description available."}</em>
-            </p>
-          </section>
-        </>
-      )}
-    </div>
-  );
-}
+/* ---------- Game Component ---------- */
 
 function Game({ game, handleSelectGame }) {
   const safeImage = game.background_image || "";
@@ -451,6 +243,8 @@ function Game({ game, handleSelectGame }) {
   );
 }
 
+/* ---------- Played Summary ---------- */
+
 function PlayedSummary({ played }) {
   const avgRating = played.length > 0 ? average(played.map((g) => g.rating)) : 0;
   const avgUserRating =
@@ -466,6 +260,8 @@ function PlayedSummary({ played }) {
     </div>
   );
 }
+
+/* ---------- Played/Watchlist Game Components ---------- */
 
 function PlayedGamesList({ played, handleDelete }) {
   return (
