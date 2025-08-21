@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useKey } from "./useKey";
+import Link from "next/link";
+import { useKey } from "../components/useKey";
 
 export default function Layout({ children }) {
   const router = useRouter();
@@ -100,12 +101,8 @@ function UserMenu() {
 
   return (
     <div className="user-menu" ref={dropdownRef}>
-      <button className="btn-login" onClick={() => router.push("/login")}>
-        Login
-      </button>
-      <button className="btn-signup" onClick={() => router.push("/signup")}>
-        Sign-up
-      </button>
+      <Link href="/login"><button className="btn-login">Login</button></Link>
+      <Link href="/signup"><button className="btn-signup">Sign-up</button></Link>
       <div className="dropdown">
         <button className="btn-dropdown" onClick={() => setOpen(!open)}>
           ☰

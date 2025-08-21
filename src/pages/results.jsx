@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Layout from "@/components/Layout";
+import Layout from "@/pages/Layout";
 import { useSearchParams } from "next/navigation";
 import StarRating from "@/components/StarRating";
 import { useGames } from "@/components/useGames";
