@@ -12,17 +12,9 @@ export default function LoginPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    const res = await signIn("credentials", {
-      redirect: false,
-      email,
-      password,
-    });
-
-    if (res.error) {
-      setError("Invalid email or password");
-    } else {
-      router.push("/");
-    }
+    // Add your auth logic here
+    console.log("Login:", { email, password });
+    router.push("/"); // redirect to home after login
   }
 
   return (
@@ -38,7 +30,10 @@ export default function LoginPage() {
           <label>Password</label>
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </div>
-        <button type="submit" className="btn-submit">Login</button>
+
+        <button type="submit" className="btn-submit">
+          Login
+        </button>
       </form>
       <div className="auth-footer">
         Don't have an account? <a href="/signup">Sign Up</a>
