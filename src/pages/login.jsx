@@ -7,12 +7,30 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    // Add your auth logic here
-    console.log("Login:", { email, password });
-    router.push("/"); // redirect to home after login
+    setError("");
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        // session cookie is automatically set by iron-session
+        router.push("/"); 
+      } else {
+        setError(data.error || "Login failed");
+      }
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+    }
   }
 
   return (
@@ -40,6 +58,8 @@ export default function LoginPage() {
             required
           />
         </div>
+
+        {error && <p className="text-red-500">{error}</p>}
 
         <button type="submit" className="btn-submit">
           Login
