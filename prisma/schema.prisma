@@ -1,0 +1,142 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Users
+model User {
+  id           BigInt   @id @default(autoincrement())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  lists        List[]
+  tags         Tag[]         @relation("UserCreatedTags")
+  gameTags     GameTag[]
+  forumThreads ForumThread[]
+  forumPosts   ForumPost[]
+}
+
+// Games (from RAWG)
+model Game {
+  id          BigInt    @id // use RAWG game ID as primary key
+  title       String
+  releaseDate DateTime?
+  coverUrl    String?
+  summary     String?
+  rawgData    Json? // store raw RAWG API payload if useful
+
+  tags         GameTag[]
+  listEntries  ListGame[]
+  forumThreads ForumThread[]
+  GameTagCount GameTagCount[]
+}
+
+// Tags
+model Tag {
+  id          BigInt   @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  isActive    Boolean  @default(true)
+
+  createdBy   User?   @relation("UserCreatedTags", fields: [createdById], references: [id])
+  createdById BigInt?
+
+  // Self relation for canonical / merged tags
+  canonical   Tag?    @relation("TagAliases", fields: [canonicalId], references: [id])
+  canonicalId BigInt?
+  aliases     Tag[]   @relation("TagAliases")
+
+  tagAliases    TagAlias[]
+  gameTags      GameTag[]
+  forumThreads  ForumThread[]
+  gameTagCounts GameTagCount[]
+}
+
+model TagAlias {
+  id    BigInt @id @default(autoincrement())
+  alias String @unique
+  tag   Tag    @relation(fields: [tagId], references: [id])
+  tagId BigInt
+}
+
+// Game ↔ Tags (with votes)
+model GameTag {
+  id        BigInt   @id @default(autoincrement())
+  game      Game     @relation(fields: [gameId], references: [id])
+  gameId    BigInt
+  tag       Tag      @relation(fields: [tagId], references: [id])
+  tagId     BigInt
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    BigInt?
+  createdAt DateTime @default(now())
+  isActive  Boolean  @default(true)
+}
+
+// Denormalised counter (materialised popularity for fast lookups)
+model GameTagCount {
+  id     BigInt @id @default(autoincrement())
+  game   Game   @relation(fields: [gameId], references: [id])
+  gameId BigInt
+  tag    Tag    @relation(fields: [tagId], references: [id])
+  tagId  BigInt
+  count  Int    @default(1)
+}
+
+// Lists
+model List {
+  id          BigInt   @id @default(autoincrement())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      BigInt
+  name        String
+  description String?
+  isPublic    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  games ListGame[]
+}
+
+model ListGame {
+  id        BigInt   @id @default(autoincrement())
+  list      List     @relation(fields: [listId], references: [id])
+  listId    BigInt
+  game      Game     @relation(fields: [gameId], references: [id])
+  gameId    BigInt
+  position  Int?
+  review    String?
+  rating    Int?     @db.SmallInt
+  createdAt DateTime @default(now())
+}
+
+// Forum (Hybrid: per-game OR per-tag)
+model ForumThread {
+  id        BigInt   @id @default(autoincrement())
+  game      Game?    @relation(fields: [gameId], references: [id])
+  gameId    BigInt?
+  tag       Tag?     @relation(fields: [tagId], references: [id])
+  tagId     BigInt?
+  user      User     @relation(fields: [userId], references: [id])
+  userId    BigInt
+  title     String
+  createdAt DateTime @default(now())
+  isPinned  Boolean  @default(false)
+
+  posts ForumPost[]
+}
+
+model ForumPost {
+  id        BigInt      @id @default(autoincrement())
+  thread    ForumThread @relation(fields: [threadId], references: [id])
+  threadId  BigInt
+  user      User        @relation(fields: [userId], references: [id])
+  userId    BigInt
+  body      String
+  createdAt DateTime    @default(now())
+  isDeleted Boolean     @default(false)
+}
