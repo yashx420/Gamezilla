@@ -2,6 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react"
+
+export function GoogleSignInButton() {
+  return (
+    <button
+      onClick={() => signIn("google")}
+      className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+    >
+      Sign in with Google
+    </button>
+  )
+}
 
 export default function SignupPage() {
   const router = useRouter();
@@ -62,7 +74,7 @@ export default function SignupPage() {
     const res = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ username, email, password }),
     });
 
     const data = await res.json();
@@ -90,7 +102,7 @@ export default function SignupPage() {
             required
           />
           <label>Name</label>
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
+          <input type="text" value={username} onChange={(e) => setName(e.target.value)} required />
         </div>
         <div className="form-field">
           <label htmlFor="email">Email</label>
@@ -125,7 +137,12 @@ export default function SignupPage() {
         <button type="submit" className="btn-submit" disabled={loading}>
           {loading ? "Signing up..." : "Sign Up"}
         </button>
-        <button type="submit" className="btn-submit">Sign Up</button>
+        <button
+        onClick={() => signIn("google", { callbackUrl: "/" })}
+        className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+      >
+        Sign in with Google
+      </button>
       </form>
 
       <div className="auth-footer">

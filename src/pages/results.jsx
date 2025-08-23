@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Layout from "@/pages/Layout";
+import Layout from "./Layout";
 import { useSearchParams } from "next/navigation";
-import StarRating from "@/components/StarRating";
-import { useGames } from "@/components/useGames";
-import { useLocalStorageState } from "@/components/useLocalStorageState";
-import { useKey } from "@/components/useKey";
+//import StarRating from "@/components/StarRating";
+import { useGames } from "../components/useGames";
+import { useLocalStorageState } from "../components/useLocalStorageState";
+//import { useKey } from "@/components/useKey";
 
 const average = (arr) => arr.reduce((acc, cur) => acc + cur, 0) / arr.length;
 const KEY = process.env.NEXT_PUBLIC_RAWG_API_KEY;

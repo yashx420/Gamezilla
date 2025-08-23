@@ -1,4 +1,4 @@
-import "@/styles/index.css";
+import "../styles/index.css";
 import "../../lib/bigint";
 
 import { SessionProvider } from "next-auth/react";
