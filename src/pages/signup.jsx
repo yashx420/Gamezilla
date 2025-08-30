@@ -136,10 +136,10 @@ export default function SignupPage() {
 
         <button type="submit" className="btn-submit" disabled={loading}>
           {loading ? "Signing up..." : "Sign Up"}
-        </button>
+        </button><p></p>
         <button
         onClick={() => signIn("google", { callbackUrl: "/" })}
-        className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+        className="btn-submit"
       >
         Sign in with Google
       </button>

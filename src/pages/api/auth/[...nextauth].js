@@ -1,12 +1,12 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import { CustomAdapter } from "../../../lib/prismaAdapter";
 import prisma from "../../../../lib/prisma";
 import bcrypt from "bcryptjs";
 
 export default NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: CustomAdapter(),
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_ID,
@@ -58,7 +58,19 @@ export default NextAuth({
       }
 
       // Random password hash
-      const randomPassword = crypto.randomBytes(32).toString("hex");
+      const characters ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+
+      function generateString(length) {
+          let result = ' ';
+         const charactersLength = characters.length;
+         for ( let i = 0; i < length; i++ ) {
+             result += characters.charAt(Math.floor(Math.random() * charactersLength));
+         }
+
+         return result;
+      }
+
+      const randomPassword = generateString(12);
       const hashedPassword = await bcrypt.hash(randomPassword, 10);
 
       // Update user with profile info
